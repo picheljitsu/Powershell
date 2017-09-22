@@ -52,9 +52,9 @@ function Parse-AuthLogs{
 
         .EXAMPLE
 
-            PS C:\> Parse-AuthLogs -computername L6034553 "9/10/2017" "9/20/2017"
+            PS C:\> Parse-AuthLogs -computername <hostname> "9/10/2017" "9/20/2017"
 
-            Parses all logs on the host L6034553 from September 10th to September 20th
+            Parses all logs on the host <hostname> from September 10th to September 20th
 
         .EXAMPLE
     
