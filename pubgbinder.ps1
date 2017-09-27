@@ -163,8 +163,8 @@ while($completed -eq 0){
             $overwrite = read-host "AutoHotKey.ahk already exists on the Desktop! Do you want to overwrite it (y/n)?"
     
             if($overwrite -eq "y"){
-               rm $env:USERPROFILE\Desktop\AutoTest.ahk 
-               $script > $env:USERPROFILE\Desktop\AutoTest.ahk 
+               rm $env:USERPROFILE\Desktop\AutoHotKey.ahk 
+               $script > $env:USERPROFILE\Desktop\AutoHotKey.ahk 
                read-host "Done! Press any key to continue" 
                $completed = 1
                break
@@ -176,7 +176,7 @@ while($completed -eq 0){
             write-host $status_message -f Red 
             }
         }
-    else { $script > $env:USERPROFILE\Desktop\AutoTest.ahk 
+    else { $script > $env:USERPROFILE\Desktop\AutoHotKey.ahk 
            write-host "Done! Remember, you'll need to manually start the
            AutoHotKey program on your desktop each time you restart your computer.
            You should see the green 'H' icon in your system tray if it's running."
