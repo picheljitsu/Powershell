@@ -1,14 +1,10 @@
-﻿
+
 function Parse-AuthLogs{
 
     <#
         .SYNOPSIS
 
-            Parses Security Authenticaiton Event Logs
-            Author: Matt Pichelmayer
-            License: BSD 3-Clause
-            Required Dependencies: None
-            Optional Dependencies: None   
+            Parse Security Event Logs for Local, Remote and Network Logons
           
         .DESCRIPTION
             
@@ -79,6 +75,14 @@ function Parse-AuthLogs{
             PS C:\> Parse-Authlogs -DaysBack 2 -HoursBack 13
     		
             Parses logs 2 days and 13 hours back
+            
+        .NOTES 
+ 
+	        Author: Matt Pichelmayer	 
+	        Email:  pichelmayer@gmail.com 
+	        Date:  06/01/2017 
+		
+#>
     		
     #>
     [CmdletBinding(DefaultParameterSetName='StartEnd')]
@@ -207,9 +211,7 @@ function Parse-AuthLogs{
                        }
 
                 }
+                
                 $array_object | Format-Table -AutoSize
-
      }
-    
-
-    
+  
