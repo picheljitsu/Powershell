@@ -13,9 +13,10 @@
 
     .EXAMPLE
 
-        PS C:\> Get-RecentFiles -username plq5360
+        PS C:\> Get-RecentFiles -username lolbox
 		
         Performs a listing of the user's recents directory
+	
     .EXAMPLE
 
         PS C:\> Get-RecentFiles -username lolbox -Parse
