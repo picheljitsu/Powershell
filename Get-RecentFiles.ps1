@@ -18,7 +18,7 @@
         Performs a listing of the user's recents directory
     .EXAMPLE
 
-        PS C:\> Get-RecentFiles -username plq5360 -Parse
+        PS C:\> Get-RecentFiles -username lolbox -Parse
 		
         Performs a listing of the user's recents directory and parses each link
 		
