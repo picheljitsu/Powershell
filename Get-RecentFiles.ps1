@@ -1,8 +1,13 @@
 ﻿function Get-RecentFiles{
 <#
+    .AUTHOR 
+    
+    	Matt Pichelmayer
+	pichelmayer@gmail.com
+	
     .SYNOPSIS
 
-		Lists files in a user's Recent directory sorted by lastwritetime property.
+	Lists files in a user's Recent directory sorted by lastwritetime property.
         
     .DESCRIPTION
 
