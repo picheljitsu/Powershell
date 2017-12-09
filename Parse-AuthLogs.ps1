@@ -2,6 +2,11 @@
 function Parse-AuthLogs{
 
     <#
+    	.AUTHOR
+	
+	    Matt Pichelmayer
+	    pichelmayer@gmail.com
+	    
         .SYNOPSIS
 
             Parse Security Event Logs for Local, Remote and Network Logons
