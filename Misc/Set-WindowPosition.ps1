@@ -1,86 +1,144 @@
+function Set-WindowPosition {
+	<#
+	.LINK
+	https://gist.github.com/jakeballard/11240204
+	#>
 
-function Get-ChildWindow{
-[CmdletBinding()]
-param (
-    [Parameter(ValueFromPipeline = $true, ValueFromPipelinebyPropertyName = $true)]
-    [ValidateNotNullorEmpty()]
-    [System.IntPtr]$MainWindowHandle
-)
+	[CmdletBinding(DefaultParameterSetName = 'InputObject')]
+	param(
+		[Parameter(Position = 0, Mandatory = $True, ValueFromPipeline = $True, ValueFromPipelinebyPropertyName = $True)]
+		[Object[]] $InputObject,
+		[Parameter(Position = 1)]
+		[ValidateSet('FORCEMINIMIZE', 'HIDE', 'MAXIMIZE', 'MINIMIZE', 'RESTORE', 'SHOW', 'SHOWDEFAULT', 'SHOWMAXIMIZED', 'SHOWMINIMIZED', 'SHOWMINNOACTIVE', 'SHOWNA', 'SHOWNOACTIVATE', 'SHOWNORMAL')]
+		[string] $Style = 'SHOW'
+	)
 
-BEGIN{
-    function Get-WindowName($hwnd) {
-        $len = [apifuncs]::GetWindowTextLength($hwnd)
-        if($len -gt 0){
-            $sb = New-Object text.stringbuilder -ArgumentList ($len + 1)
-            $rtnlen = [apifuncs]::GetWindowText($hwnd,$sb,$sb.Capacity)
-            $sb.tostring()
-        }
-    }
+	BEGIN {
+		$WindowStates = @{
+			'FORCEMINIMIZE'   = 11
+			'HIDE'            = 0
+			'MAXIMIZE'        = 3
+			'MINIMIZE'        = 6
+			'RESTORE'         = 9
+			'SHOW'            = 5
+			'SHOWDEFAULT'     = 10
+			'SHOWMAXIMIZED'   = 3
+			'SHOWMINIMIZED'   = 2
+			'SHOWMINNOACTIVE' = 7
+			'SHOWNA'          = 8
+			'SHOWNOACTIVATE'  = 4
+			'SHOWNORMAL'      = 1
+		}
 
-    if (("APIFuncs" -as [type]) -eq $null){
-        Add-Type  @"
-        using System;
-        using System.Runtime.InteropServices;
-        using System.Collections.Generic;
-        using System.Text;
-        public class APIFuncs
-          {
-            [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-            public static extern int GetWindowText(IntPtr hwnd,StringBuilder lpString, int cch);
+$Win32ShowWindowAsync = Add-Type -MemberDefinition @'
+[DllImport("user32.dll")] 
+public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow); 
+'@ -Name "Win32ShowWindowAsync" -Namespace Win32Functions -PassThru
+	
+	}
 
-            [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)]
-            public static extern IntPtr GetForegroundWindow();
+	PROCESS {
+		foreach ($process in $InputObject) {
+		    $Win32ShowWindowAsync::ShowWindowAsync($process.MainWindowHandle, $WindowStates[$Style]) | Out-Null
+		    Write-Verbose ("Set Window Style '{1} on '{0}'" -f $MainWindowHandle, $Style)
+		}
+	}
+}
 
-            [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)]
-            public static extern Int32 GetWindowThreadProcessId(IntPtr hWnd,out Int32 lpdwProcessId);
+function Show-Process($Process, [Switch]$Maximize)
+{
+  $sig = '
+    [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")] public static extern int SetForegroundWindow(IntPtr hwnd);
+  '
+  
+  if ($Maximize) { $Mode = 3 } else { $Mode = 4 }
+  $type = Add-Type -MemberDefinition $sig -Name WindowAPI -PassThru
+  $hwnd = $process.MainWindowHandle
+  $null = $type::ShowWindowAsync($hwnd, $Mode)
+  $null = $type::SetForegroundWindow($hwnd) 
+}
 
-            [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)]
-            public static extern Int32 GetWindowTextLength(IntPtr hWnd);
+Function Set-Window {
 
-            [DllImport("user32")]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            public static extern bool EnumChildWindows(IntPtr window, EnumWindowProc callback, IntPtr i);
-            public static List<IntPtr> GetChildWindows(IntPtr parent)
-            {
-               List<IntPtr> result = new List<IntPtr>();
-               GCHandle listHandle = GCHandle.Alloc(result);
-               try
-               {
-                   EnumWindowProc childProc = new EnumWindowProc(EnumWindow);
-                   EnumChildWindows(parent, childProc,GCHandle.ToIntPtr(listHandle));
-               }
-               finally
-               {
-                   if (listHandle.IsAllocated)
-                       listHandle.Free();
-               }
-               return result;
-           }
-            private static bool EnumWindow(IntPtr handle, IntPtr pointer)
-           {
-               GCHandle gch = GCHandle.FromIntPtr(pointer);
-               List<IntPtr> list = gch.Target as List<IntPtr>;
-               if (list == null)
-               {
-                   throw new InvalidCastException("GCHandle Target could not be cast as List<IntPtr>");
-               }
-               list.Add(handle);
-               //  You can modify this to check to see if you want to cancel the operation, then return a null here
-               return true;
-           }
-            public delegate bool EnumWindowProc(IntPtr hWnd, IntPtr parameter);
-           }
+    [OutputType('System.Automation.WindowInfo')]
+    [cmdletbinding()]
+    Param (
+        [parameter(ValueFromPipelineByPropertyName=$True)]
+        $ProcessName,
+        [int]$X,
+        [int]$Y,
+        [int]$Width,
+        [int]$Height,
+        [switch]$Passthru
+    )
+    Begin {
+        Try{
+            [void][Window]
+        } Catch {
+        Add-Type @"
+              using System;
+              using System.Runtime.InteropServices;
+              public class Window {
+                [DllImport("user32.dll")]
+                [return: MarshalAs(UnmanagedType.Bool)]
+                public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+                [DllImport("User32.dll")]
+                public extern static bool MoveWindow(IntPtr handle, int x, int y, int width, int height, bool redraw);
+              }
+              public struct RECT
+              {
+                public int Left;        // x position of upper-left corner
+                public int Top;         // y position of upper-left corner
+                public int Right;       // x position of lower-right corner
+                public int Bottom;      // y position of lower-right corner
+              }
 "@
         }
-}
-
-PROCESS{
-    foreach ($child in ([apifuncs]::GetChildWindows($MainWindowHandle))){
-        Write-Output (,([PSCustomObject] @{
-            MainWindowHandle = $MainWindowHandle
-            ChildId = $child
-            ChildTitle = (Get-WindowName($child))
-        }))
+    }
+    Process {
+        $Rectangle = New-Object RECT
+        $Handle = [system.intptr](Get-Process -Name $Processname | select -ExpandProperty MainWindowHandle)
+        $Return = [Window]::GetWindowRect($Handle,[ref]$Rectangle)
+        If (-NOT $PSBoundParameters.ContainsKey('Width')) {            
+            $Width = $Rectangle.Right - $Rectangle.Left            
+        }
+        If (-NOT $PSBoundParameters.ContainsKey('Height')) {
+            $Height = $Rectangle.Bottom - $Rectangle.Top
+        }
+        If ($Return) {
+            $Return = [Window]::MoveWindow($Handle, $x, $y, $Width, $Height,$True)
+        }
+        If ($PSBoundParameters.ContainsKey('Passthru')) {
+            $Rectangle = New-Object RECT
+            $Return = [Window]::GetWindowRect($Handle,[ref]$Rectangle)
+            If ($Return) {
+                $Height = $Rectangle.Bottom - $Rectangle.Top
+                $Width = $Rectangle.Right - $Rectangle.Left
+                $Size = New-Object System.Management.Automation.Host.Size -ArgumentList $Width, $Height
+                $TopLeft = New-Object System.Management.Automation.Host.Coordinates -ArgumentList $Rectangle.Left, $Rectangle.Top
+                $BottomRight = New-Object System.Management.Automation.Host.Coordinates -ArgumentList $Rectangle.Right, $Rectangle.Bottom
+                If ($Rectangle.Top -lt 0 -AND $Rectangle.LEft -lt 0) {
+                    Write-Warning "Window is minimized! Coordinates will not be accurate."
+                }
+                $Object = [pscustomobject]@{
+                    ProcessName = $ProcessName
+                    Size = $Size
+                    TopLeft = $TopLeft
+                    BottomRight = $BottomRight
+                }
+                $Object.PSTypeNames.insert(0,'System.Automation.WindowInfo')
+                $Object            
+            }
+        }
     }
 }
-}
+
+#Check for current resolution before running these commands
+
+#Set the window positions
+Get-Process "ts3client_win64"  | Set-WindowStyle -Style SHOW
+Get-Process "ts3client_win64" | Set-Window -x 2908 -y 12
+Show-Process "steam"
+Get-Process "steam" | Set-Window -x 3284 -y 12
