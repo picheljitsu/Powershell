@@ -1,8 +1,5 @@
-#Not done. Need to work on calling logic
+    <#Not done. Need to work on calling logic and wrap in function
 
-function Set-Window{
-    <#
-    
     Author: Matt Pichelmayer 
     Going to add functionality to compile this as a service exe so you can set windows up automatically 
     #>
@@ -142,7 +139,7 @@ function Set-Window{
         return $process 
 
         }
-}
+
 
     # Need to use a program like Window Spy or programmatically detect window postions so you can set the coordinates where you 
     # want them
