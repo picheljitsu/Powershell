@@ -1,4 +1,4 @@
-﻿function Set-WindowStyle {
+﻿function Set-ProcessWindows {
 	<#
 	.LINK
 	https://gist.github.com/jakeballard/11240204
