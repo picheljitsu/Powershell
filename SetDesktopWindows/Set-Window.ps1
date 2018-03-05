@@ -19,12 +19,12 @@
     [string]$user32_assembly_import += '[DllImport("user32.dll")] public static extern int SetForegroundWindow(IntPtr hwnd);'
     $script:user32_dll = Add-Type -MemberDefinition $user32_assembly_import -name NativeMethods -namespace Win32
 
-    function Maximize($Process, [Switch]$Maximize){
+    function Maximize($Process){
         $hwnd = $process.MainWindowHandle
         $user32_dll::ShowWindowAsync($hwnd, 3)
         $user32_dll::SetForegroundWindow($hwnd) 
     }
-    function Minimize(){
+    function Minimize($Process){
         $hwnd = $process.MainWindowHandle
         $user32_dll::ShowWindowAsync($hwnd, 4)
         $user32_dll::SetForegroundWindow($hwnd) 
