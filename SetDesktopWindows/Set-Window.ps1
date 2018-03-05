@@ -143,3 +143,30 @@ function Set-Window{
 
         }
 }
+
+    # Need to use a program like Window Spy or programmatically detect window postions so you can set the coordinates where you 
+    # want them
+    # $steam_exe_path = "C:\Program Files (x86)\Steam\Steam.exe"
+    # $steam_arg = "friends"
+    # $teamspeak_exe_path = "C:\Program Files\TeamSpeak 3 Client\ts3client_win64.exe"
+
+    # $steam_proc = get-process -name "Steam"
+    # $tspeak_proc = get-process -name "ts3client_win64"
+
+    # if($steam_proc)
+    #         { Set-WindowPosition -ProcessName $steam_proc.name -x 3284 -y 12 }
+    # else    { Start-ProcessToForeground -FilePath $steam_exe_path -ArgumentList $steam_arg }
+
+    # #TeamSpeak
+    # if($tspeak_proc){ 
+
+    # $TeamSpeak_window = get-process steam | ? { $_.MainWindowTitle -eq "Friends" }
+    # Set-WindowPosition -InputObject $TeamSpeak_window -x 2908 -y 12 
+
+    # }
+
+    # else {  
+    
+    # Start-ProcessToForeground -FilePath $TeamSpeak_exe_path 
+    
+    #     }
