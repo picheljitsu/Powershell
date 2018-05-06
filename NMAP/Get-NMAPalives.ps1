@@ -1,5 +1,6 @@
-﻿#Take in an NMAP -sn -oG file and strip out terms
-function get-alives{
+﻿
+function Get-NMAPalives{
+    <#Take in an NMAP -sn -oG file and strip out terms#>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory=$True,Position=0)]
