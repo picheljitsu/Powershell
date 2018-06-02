@@ -5,6 +5,14 @@ function Get-RemoteMFT {
     .SYNOPSIS
 
     Extracts Master File Table from volume from a remote host without writing to the remote host's disk. 
+    
+    Version: 0.1
+    Author : Jesse Davis (@secabstraction)
+    License: BSD 3-Clause
+    
+    Version: 0.1
+    Author : Matt Pichelmayer
+    License: BSD 3-Clause
 
     .DESCRIPTION
 
