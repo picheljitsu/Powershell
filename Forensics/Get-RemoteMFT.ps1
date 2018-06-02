@@ -53,7 +53,7 @@ function Get-RemoteMFT {
     .LINK
 
     Export-MFT: https://gist.github.com/secabstraction/4044f4aadd3ef21f0ca9
-    Get-RemoteMFT:
+    Get-RemoteMFT: https://github.com/picheljitsu/Powershell/blob/master/Forensics/Get-RemoteMFT.ps1
 
     #>
 
