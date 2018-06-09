@@ -14,7 +14,7 @@ function Get-RemoteMFT {
     Author : Matt Pichelmayer
     License: BSD 3-Clause
 
-    .DESCRIPTION
+     .DESCRIPTION
 
     This module reads the Master File Table from a remote host and streams it to a local path on the workstation the script is ran from.
 
@@ -39,7 +39,7 @@ function Get-RemoteMFT {
     The following example extracts the master file table from a remote workstation, connects back to this script's workstation and streams the file on port 7777. If an LPort
     is not secified, port 2998 is used by default.
 
-    PS C:\> Get-RemoteMFT -ComputerName <computer_name> -OutputFilePath "C:\mft.bin" -FirewallRuleName "MFT File Transfer" -Port 7777
+    PS C:\> Get-ForensicMFT -ComputerName <computer_name> -OutputFilePath "C:\mft.bin" -FirewallRuleName "MFT File Transfer" -Port 7777
 
     .NOTES
 
@@ -59,9 +59,6 @@ function Get-RemoteMFT {
     .OUTPUTS
 
     .LINK
-
-    Export-MFT: https://gist.github.com/secabstraction/4044f4aadd3ef21f0ca9
-    Get-RemoteMFT: https://github.com/picheljitsu/Powershell/blob/master/Forensics/Get-RemoteMFT.ps1
 
     #>
 
@@ -85,12 +82,10 @@ function Get-RemoteMFT {
     #Enable verbosity by default
     $VerbosePreference = 'Continue'
 
-    #Scriptblock to start a tcp server that will be forked into a seperate
 
     $OutputFilePath = Join-Path (Split-Path $OutputFilePath | resolve-path ) (Split-Path $OutputFilePath -Leaf) -ErrorAction Stop
-    $remote_pssession = New-PSSession -computername $computername -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop
     
-    #Powershell Runspace
+    #Scriptblock to start a tcp server that will be forked into a seperate
     $ListenerBlock = {
  
         param($Lport, $OutputFilePath)
@@ -103,12 +98,19 @@ function Get-RemoteMFT {
 
         $remotesvr = $TcpClient.Client.RemoteEndPoint.Address.IPAddressToString
         $TcpNetworkstream = $TCPClient.GetStream()
+        $MFTSizeMsg = New-Object Byte[] 0x20
         $Receivebuffer = New-Object Byte[] $TcpClient.ReceiveBufferSize
         $OutputFileStream = New-Object IO.FileStream $OutputFilePath ,'Append','Write','Read'
         
-        try {
-
+        try { 
+                      
             while($TcpClient.Connected){ 
+
+                do{ $GetMFTSize = $TcpNetworkstream.Read($MFTSizeMsg, 0, $MFTSizeMsg.Length)
+                     }
+                     until($GetMFTSize -eq $MFTSizeMsg.Length)
+                
+                $TcpNetworkstream.flush()
 
                 $Read = $TcpNetworkstream.Read($Receivebuffer, 0, $Receivebuffer.Length)
 
@@ -124,7 +126,6 @@ function Get-RemoteMFT {
                     }
                
                 }
-                
             }
                     
         catch { exit(1) }
@@ -134,41 +135,11 @@ function Get-RemoteMFT {
 
         } #End Listener Block
     
-    Write-Verbose "[*] Initializing Listener Runspace..."
-    $InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
-    $runspacepool = [RunspaceFactory]::CreateRunspacePool($InitialSessionState)
+       
+    ################# Scriptblock to dump MFT on Remote host #################
+    $MFTScriptBlock = {  
 
-    Write-Verbose "[*] Opening Runspace..."
-    sleep 1
-    $runspacepool.Open()
-    $runspace = [PowerShell]::Create()
-    $runspace.runspacePool = $runspacepool
-
-    Write-Verbose "[+] Runspace Open"
-    sleep 1
-    $ParamList = @{ "Lport" = $Lport
-                    "OutputFilePath" = $OutputFilePath }
-
-    Write-Verbose "[*] Forking Listener to Runspace..."
-    [void]$runspace.AddScript($ListenerBlock).AddParameters($ParamList)
-
-    Write-Verbose "[*] Starting Listener..."
-
-    sleep 1
-    $runspace.begininvoke() | Out-Null
-
-    if(-not ($runspace.HadErrors)) {
-
-        if($(netstat -ant | findstr $Lport)){ Write-Verbose "[+] Successfully forked TCP listener on port $Lport to background" }
-        
-        }
-
-    else { Write-Verbose "[-] Couldn't start Listener. Exiting." }
-
-    #Scriptblock to dump MFT on Remote host
-    $ScriptBlock = {  
-
-        Param($calling_host, $Volume, $Lport)
+        Param($Listener, $Volume, $Lport)
 
         if ($Volume -ne 0) { 
 
@@ -295,8 +266,10 @@ function Get-RemoteMFT {
         $DataAttribute = $Attributes[$($CurrentOffset - $AttributeSize)..$($CurrentOffset - 1)]
     
         # Parse MFT size from data attribute
-        $MftSize = [Bitconverter]::ToUInt64($DataAttribute[0x30..0x37], 0)
         
+        $MftSize = [Bitconverter]::ToUInt64($DataAttribute[0x30..0x37], 0)
+
+
         # Parse data runs from data attribute
         $OffsetToDataRuns = [Bitconverter]::ToInt16($DataAttribute[0x20..0x21], 0)        
         $DataRuns = $DataAttribute[$OffsetToDataRuns..$($DataAttribute.Length -1)]
@@ -309,16 +282,26 @@ function Get-RemoteMFT {
         $DataRunStringsOffset = 0        
         $TotalBytesWritten = 0
         $MftData = New-Object byte[](0x1000)
+        $MftSizeMsg = New-Object byte[](0x20)
         [array]$SendBuffer = @()
 
         # Connect Back to calling host to send MFT
         $Tcpclient = New-Object System.Net.Sockets.TcpClient
         $Tcpclient.sendbuffersize = 16384
-        $serverip = (([System.Net.Dns]::GetHostAddresses($calling_host))[0]).IPAddressToString
+        $Listenerip = (([System.Net.Dns]::GetHostAddresses($Listener))[0]).IPAddressToString
 
-        try{ $Tcpclient.Connect($serverip, $lport)
+        try{ $Tcpclient.Connect($Listenerip, $lport)
              $TcpNetworkStream = $Tcpclient.GetStream()
              
+             #Send the MFT size first
+             $Encoder = [System.Text.ASCIIEncoding]
+             $EncodedMSG = $Encoder::ASCII.GetBytes($MftSize)
+
+             $TcpNetworkStream.write($EncodedMSG, 0 ,$MftSizeMsg.length)
+             $TcpNetworkStream.Flush()
+
+             sleep 20
+             break
              do {
                  $StartBytes = [int]($DataRunStrings[$DataRunStringsOffset][0]).ToString()
                  $LengthBytes = [int]($DataRunStrings[$DataRunStringsOffset][1]).ToString()
@@ -382,19 +365,80 @@ function Get-RemoteMFT {
         catch { 0 }
         
         }
-        
-    $calling_host = $env:COMPUTERNAME
+
+    ################# Initialize Runspace #################
+    
+    $Listener = $env:COMPUTERNAME
+    
+    
+    Write-Verbose "[*] Initializing Listener Runspace..."
+    #$InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+
+    $runspace = [RunspaceFactory]::CreateRunspace()
+  
+
+    
+    Write-Verbose "[*] Opening Runspace..."
+    sleep 1
+    $runspace.Open()
+
+    $Status = [hashtable]::Synchronized(@{})    
+    $runspace.SessionStateProxy.SetVariable('Status',$Status)
+    $ListenerRunspace = [PowerShell]::Create()
+    $ListenerRunspace.runspace = $runspace
+    $ClientRunspace = [PowerShell]::Create()
+    $ClientRunspace.runspace = $runspace
+    
+    Write-Verbose "[+] Runspace Open"
+    sleep 1
+    $ListenerParamList = @{ "Lport"  = $Lport
+                            "OutputFilePath" = $OutputFilePath }
+    
+    $MFTArgument = [scriptblock]::Create($MFTScriptBlock)
+    $MFTParamList      = @{ "ComputerName" = $ComputerName
+                            "Listener" = $Listener
+                            "Volume" = $Volume
+                            "LPort"  = $Lport 
+                            "MFTScriptBlock" = $MFTArgument }
+    
+    $GetMFTScript = { param($Listener, $Volume, $Lport, $MFT, $ComputerName)
+                      $remote_pssession = New-PSSession -computername $ComputerName -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop
+                      $Status.Value = $remote_pssession.Availability 
+
+                      #$ReturnedObjects = Invoke-Command -Session $remote_pssession -ScriptBlock $MFTScriptBlock -ArgumentList @($Listener,$Volume,$LPort) }
+                      }
+    
+    Write-Verbose "[*] Forking Process to Runspace..."
+
+    [void]$ListenerRunspace.AddScript($ListenerBlock).AddParameters($ListenerParamList)
+    [void]$ClientRunspace.AddScript($GetMFTScript).AddParameters($MFTParamList)
+    
+
+    
     netsh advfirewall firewall delete rule name=$FirewallRuleName | Out-Null
     netsh advfirewall firewall add rule name=$FirewallRuleName dir=in action=allow protocol=TCP localport=$lport | Out-Null
 
-    write-verbose "[+] Added Firewall rule `"$FirewallRuleName`" for port $LPort"    
+    write-verbose "[+] Added Firewall rule `"$FirewallRuleName`" for port $LPort" 
+    Write-Verbose "[*] Starting Listener..."
+        sleep 1
+    #$ListenerRunspace.begininvoke() | Out-Null
+
+    if(($runspace.HadErrors)) { Write-Verbose "[-] Error starting runspace." }
+
+    if($(netstat -ant | findstr $Lport)){ Write-Verbose "[+] Successfully forked TCP listener on port $Lport to background" } 
+      
     $scriptTime = [Diagnostics.Stopwatch]::StartNew()
 
     Write-Verbose "[+] Execution Start time: $(get-date -Format t)"
     Write-Verbose "[*] Writing to $OutputFilePath"
-    $ReturnedObjects = Invoke-Command -Session $remote_pssession -ScriptBlock $ScriptBlock -ArgumentList @($calling_host,$Volume,$LPort) 
-    if($ReturnedObjects -eq 0){ write-verbose "[-] Failed to transfer MFT."}
-    else{write-verbose "[+] Successfully copied MFT with a size of $($ReturnedObjects / 1024 / 1024) MB"}
+    $ClientRunspace.BeginInvoke() | Out-Null
+    while(1){ sleep 2
+              write-host $status.value     }
+
+
+    #$ReturnedObjects = Invoke-Command -Session $remote_pssession -ScriptBlock $MFTScriptBlock -ArgumentList @($Listener,$Volume,$LPort) 
+    #if($ReturnedObjects -eq 0){ write-verbose "[-] Failed to transfer MFT."}
+    #else{write-verbose "[+] Successfully copied MFT with a size of $($ReturnedObjects / 1024 / 1024) MB"}
 
     Write-Verbose "[*] Removing Runspace..."
     $runspace.Stop()
@@ -409,3 +453,4 @@ function Get-RemoteMFT {
     write-Verbose "[+] Done, execution time: $($ScriptTime.Elapsed)"  
 
     }
+    
