@@ -30,14 +30,20 @@ function Get-DCOMSecurity{
     
             PS C:\> Get-DCOMSecurity
     		
-            Enumerates DCOM security settings on the local computer
+            Enumerates DCOM security settings on the local computer.
    
         .EXAMPLE
     
             PS C:\> Get-DCOMSecurity -ComputerName <hostname>
     		
-            Enumerates DCOM security settings on a remote computer
+            Enumerates DCOM App Names/CLSIDs.
 
+        .EXAMPLE
+    
+            PS C:\> Get-DCOMSecurity -ComputerName <hostname> -AccessSettings -LaunchSettings -ResolveSID
+    		
+            Enumerates DCOM Access and Launch Settings as well as resolves associated SIDs.
+	    
         .EXAMPLE
     
             PS C:\> Get-DCOMSecurity -ComputerName <hostname> -ListSIDs
