@@ -3,7 +3,7 @@ function Get-DCOMSecurity{
     <#
         .SYNOPSIS
 
-            Enumerate DCOM Security Settings
+            Enumerates and Maps DCOM Access and Launch ACL Settings
           
         .DESCRIPTION
             
@@ -17,19 +17,14 @@ function Get-DCOMSecurity{
             If using this script locally, you can direct it to run against a remote workstation using the ComputerName 
             argument.  If omitted, the local workstation is assumed.
 
-        .PARAMETER ListGroups
+        .PARAMETER ListSIDs
 
-            List Available SIDs and their Groups
+            Don't enumerate any settings, just list default SIDs and their groups.  For reference only.
 
-        .PARAMETER Username
+        .PARAMETER ResolveSID
 
-            If using this script locally, you can direct it to run against a remote workstation using the ComputerName 
-            argument.  If omitted, the local workstation is assumed.
-
-        .PARAMETER SID
-
-            If using this script locally, you can direct it to run against a remote workstation using the ComputerName 
-            argument.  If omitted, the local workstation is assumed.
+            Switch to enable SID resolution. The hashtable is used to resolve default SIDs, if a name isn't returned, a
+	    query is performed via Active Directory.
   
         .EXAMPLE
     
@@ -47,7 +42,7 @@ function Get-DCOMSecurity{
     
             PS C:\> Get-DCOMSecurity -ComputerName <hostname> -ListSIDs
     		
-            Prints out a list of default SIDs
+            Prints out a list of default SIDs and doesn't enumerate any security settings.
 
         .EXAMPLE
     
