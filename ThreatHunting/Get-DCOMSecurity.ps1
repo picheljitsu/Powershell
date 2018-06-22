@@ -4,14 +4,13 @@ function Get-DCOMSecurity{
         .SYNOPSIS
 
             Enumerate DCOM Security Settings
-            Author: Matt Pichelmayer
           
         .DESCRIPTION
             
             This script is used to enumerate security settings based on WMI information from the Win32_DCOMApplication, 
             Win32_DCOMApplicationAccessAllowedSetting, and Win32_DCOMApplicationLaunchAllowedSetting for detecting 
-            lateral movement avenues.  For more information on DCOM-based lateral movement concept, refer to the 
-            following article: https://enigma0x3.net/2017/01/23/lateral-movement-via-dcom-round-2/
+            potential avenues for lateral movement or persistence.  For more information on DCOM-based lateral movement concept, 
+	    refer to the following article: https://enigma0x3.net/2017/01/23/lateral-movement-via-dcom-round-2/
 
         .PARAMETER ComputerName
 
@@ -55,8 +54,14 @@ function Get-DCOMSecurity{
             PS C:\> Get-DCOMSecurity -ResolveSID -LaunchSettings | ? {$_.appname -like "*PLA*"}
     		
             Prints out all applications with *PLA* in the appname title with their LaunchSetting permissions
-            and resolves the SIDs in the permissions
-            
+            and resolves the SIDs in the permissions.
+	    
+	.NOTES
+	
+            Enumerate DCOM Security Settings
+            Author: Matt Pichelmayer
+	    Version: 1.0
+            License: BSD 3-Clause
     #>
 
     [CmdletBinding(DefaultParametersetName='Default')]
@@ -215,6 +220,7 @@ function Get-DCOMSecurity{
                         $access_table_entry = "$access_sid ($access_principal)" 
 
                         }
+			
                     else{ $access_table_entry = $access_sid }
 
                     }
