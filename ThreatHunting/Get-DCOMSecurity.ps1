@@ -1,6 +1,7 @@
 function Get-DCOMSecurity{
 
     <#
+    
         .SYNOPSIS
 
             Enumerates and Maps DCOM Access and Launch ACL Settings
