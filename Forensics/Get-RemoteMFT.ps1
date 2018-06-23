@@ -60,13 +60,11 @@ function Get-RemoteMFT {
         Source: https://gist.github.com/secabstraction/4044f4aadd3ef21f0ca9
         Author : Jesse Davis (@secabstraction)
         License: BSD 3-Clause
-        
-        .INPUTS
-
-        .OUTPUTS
 
         .LINK
 
+        https://github.com/picheljitsu/Powershell/edit/master/Forensics/Get-RemoteMFT.ps1
+        
     #>
 
     [CmdLetBinding()]
