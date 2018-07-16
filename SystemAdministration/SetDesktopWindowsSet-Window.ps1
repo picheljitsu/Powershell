@@ -20,10 +20,10 @@
 
         }
 
-    Function Set-WindowPosition {
+    function Set-WindowPosition {
 
         [OutputType('System.Automation.WindowInfo')]
-        [cmdletbinding()]
+        [CmdletBinding()]
         Param (
             [parameter(ValueFromPipelineByPropertyName=$True)]
             [object]$Process,
@@ -106,7 +106,7 @@
     #Additional function
     function Start-ProcessToForeground{
 
-        [cmdletbinding()]
+        [CmdletBinding()]
         Param ( [string]$FilePath,
                 [string]$ArgumentList
                 )
