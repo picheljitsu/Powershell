@@ -112,28 +112,15 @@
             }
         }
     }
-
+    
+    #Additional function
     function Start-ProcessToForeground{
 
         [cmdletbinding()]
         Param ( [string]$FilePath,
                 [string]$ArgumentList
                 )
-        
-        $startproc = Start-Process -FilePath $FilePath
-        $startproc.MainWindowHandle
-        $started = $false
-
-        Do {
-
-            $status = Get-Process notepad -ErrorAction SilentlyContinue
-
-            if (!($status)) { Write-Host '[*] Waiting for process to start' ; Start-Sleep -Seconds 1 }
-            
-            else { Write-Host '[+] Process has started' ; $started = $true }
-
-        }
-        Until ( $started )
+        Start-Process -FilePath $FilePath | Wait-Process
         $process = (Get-Process | Where-Object { $_.Path -eq $FilePath })
         $process_name = $process.processname 
         $hwnd = @($process_name)[0].MainWindowHandle
@@ -143,9 +130,11 @@
         # Restore window
         $user32_dll::ShowWindowAsync($hwnd, 4)
 
-        return $process 
+        Set-Mize $process -Minimize
+        Set-Mize $process -Maximize
 
         }
+        
     #Example run
     #$proc = get-process -name *chrome*
     #Set-Mize -Process $proc -Maximize }
