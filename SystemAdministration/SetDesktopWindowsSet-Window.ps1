@@ -1,23 +1,13 @@
-
-
-    [CmdletBinding()]
-    param([parameter]
-          [int32]$Process,
-          [parameter]
-          [Object[]]$InputObject,
-          [parameter]
-          [switch]$Maximize,
-          [parameter]
-          [switch]$Minimize
-
-          )
-
-    [string]$user32_assembly_import =  '[DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);'
-    [string]$user32_assembly_import += '[DllImport("user32.dll")] public static extern int SetForegroundWindow(IntPtr hwnd);'
-    $script:user32_dll = Add-Type -MemberDefinition $user32_assembly_import -name NativeMethods -namespace Win32
-
-    function Set-Mize($Process, [Switch]$Maximize, [switch]$Minimize){
-
+    function Set-Mize() {
+    
+        [CmdletBinding()]
+        param([parameter]
+            [object]$Process,
+            [parameter]
+            [switch]$Maximize,
+            [parameter]
+            [switch]$Minimize)
+            
         [string]$user32_assembly_import =  '[DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);'
         [string]$user32_assembly_import += '[DllImport("user32.dll")] public static extern int SetForegroundWindow(IntPtr hwnd);'
         $user32_dll = Add-Type -MemberDefinition $user32_assembly_import -name NativeMethods -namespace Win32
@@ -123,12 +113,6 @@
         Start-Process -FilePath $FilePath | Wait-Process
         $process = (Get-Process | Where-Object { $_.Path -eq $FilePath })
         $process_name = $process.processname 
-        $hwnd = @($process_name)[0].MainWindowHandle
-        # Minimize window
-        
-        $user32_dll::ShowWindowAsync($hwnd, 2)
-        # Restore window
-        $user32_dll::ShowWindowAsync($hwnd, 4)
 
         Set-Mize $process -Minimize
         Set-Mize $process -Maximize
