@@ -121,7 +121,7 @@
         
     #Example run
     #$proc = get-process -name *chrome*
-    #Set-Mize -Process $proc -Maximize }
+    #Set-Mize -Process $proc -Maximize
     #Set-WindowPosition -Process $proc -x 2625 -y 0 -Width 439 -Height 1087
 
 
