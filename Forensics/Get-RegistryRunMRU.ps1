@@ -102,8 +102,8 @@ function Get-RegistryRunMRU{
                 }
 
             }
+            
         else { write-host "[-] Couldn't find registry key $MRUList" }
-
 
         Set-Location -Path "C:\"
         reg unload $hive
