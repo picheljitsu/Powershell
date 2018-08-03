@@ -1,0 +1,95 @@
+function Get-LinuxProcesses {
+
+    <#
+    
+    .NOTES
+    Plink Help File
+    Plink: command-line connection utility
+    Release 0.70
+    Usage: plink [options] [user@]host [command]
+           ("host" can also be a PuTTY saved session name)
+    Options:
+      -V        print version information and exit
+      -pgpfp    print PGP key fingerprints and exit
+      -v        show verbose messages
+      -load sessname  Load settings from saved session
+      -ssh -telnet -rlogin -raw -serial
+                force use of a particular protocol
+      -P port   connect to specified port
+      -l user   connect with specified username
+      -batch    disable all interactive prompts
+      -proxycmd command
+                use 'command' as local proxy
+      -sercfg configuration-string (e.g. 19200,8,n,1,X)
+                Specify the serial configuration (serial only)
+    The following options only apply to SSH connections:
+      -pw passw login with specified password
+      -D [listen-IP:]listen-port
+                Dynamic SOCKS-based port forwarding
+      -L [listen-IP:]listen-port:host:port
+                Forward local port to remote address
+      -R [listen-IP:]listen-port:host:port
+                Forward remote port to local address
+      -X -x     enable / disable X11 forwarding
+      -A -a     enable / disable agent forwarding
+      -t -T     enable / disable pty allocation
+      -1 -2     force use of particular protocol version
+      -4 -6     force use of IPv4 or IPv6
+      -C        enable compression
+      -i key    private key file for user authentication
+      -noagent  disable use of Pageant
+      -agent    enable use of Pageant
+      -hostkey aa:bb:cc:...
+                manually specify a host key (may be repeated)
+      -m file   read remote command(s) from file
+      -s        remote command is an SSH subsystem (SSH-2 only)
+      -N        don't start a shell/command (SSH-2 only)
+      -nc host:port
+                open tunnel in place of session (SSH-2 only)
+      -sshlog file
+      -sshrawlog file
+                log protocol details to a file
+      -shareexists
+                test whether a connection-sharing upstream exists
+        #>
+
+    [CmdletBinding()]
+    param([parameter()]
+          [string]$ComputerName
+          [parameter(Mandatory = $true)]
+          [string]$Target,
+          [parameter(Mandatory = $true)]
+          [object]$Credentials,
+          [parameter()]
+          [ValidateScript({Test-Path $_ })]
+          [string[]]$PLinkPath = "C:\Program Files\PuTTY\plink.exe"
+          )
+
+    $UserName = $Credentials.GetNetworkCredential().UserName
+    $Password = $Credentials.GetNetworkCredential().Password
+
+    #Command for grabbing process information
+    $nixProcsCmd = "`& `$PLinkPath `$UserName@`$ComputerName -pw `$Password"
+    $nixProcsCmd += " `"ps -Ao `'%U,%P,%p,%t,%a`'`" 2> `$Null"
+
+    #Enumerate known host keys stored in Registry. 
+    Write-Verbose "Checking Registry for $ComputerName known host key"
+    $KeysRegistry = (Get-ChildItem -Path "HKCU:\Software\SimonTatham\PuTTY").Property
+    $KeysRegistry = $KeysRegistry | ForEach { $_ -replace ".+?:","" }
+
+    #If ComputerName wasn't in the known host keys, prepend "echo y |" to accept the remote host
+    #key prior to running process command to avoid user interaction requirement
+    if($ComputerName -notin $KeysRegistry){ $nixProcsCmd = "echo y | $nixProcsCmd" }
+
+    Write-Verbose "Collecting Process Information..."
+    $processlist = Invoke-Expression $nixProcsCmd
+    $processlist = $processlist | ConvertFrom-Csv
+    
+    #Append Collection Timestamp
+    $timestamp = (Get-Date).ToString()
+    $processlist | Add-Member -MemberType NoteProperty -Name "CollectionTimestamp" -value $timestamp
+    $processlist | Add-Member -MemberType NoteProperty -Name "ComputerName" -value $ComputerName    
+    
+    return $processlist
+
+    }
