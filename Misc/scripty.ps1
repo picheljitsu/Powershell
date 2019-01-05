@@ -7,13 +7,8 @@ function Move-Mouse {
           [int]$Delay)
     
     #Allows for running in PS console
-    Add-Type -AssemblyName PresentationCore, PresentationFramework
-    $State = [hashtable]::Synchronized(@{ "Started" = $True })
-    $MouseThreadEnv = [RunspaceFactory]::CreateRunspace()
-    $MouseThreadEnv.Open()
-    $MouseThreadEnv.SessionStateProxy.SetVariable('State',$State)
-    $MouseThread = [PowerShell]::Create()
-    $MouseThread.runspace = $MouseThreadEnv
+    Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase, System.Windows.Forms, System.Drawing
+	$State = [hashtable]::Synchronized(@{ "Started" = $True })
     $MenuHeader = "************** Select Profile **************"
           
     $MouseClickBlock = {       
@@ -51,17 +46,21 @@ function Move-Mouse {
                     } #End Scriptblock
  
     $msg = ''
-    $menuOpts = @{ "AK" = @{ "Move" = .008 ; "Delay" = 10 }
-                   "AR" = @{ "Move" = .007 ; "Delay" = 10 } }
+    $menuOpts = @{ "1" = @{ "Move" = .005 ; "Delay" = 10 }
+							"2" = @{ "Move" = .007  ; "Delay" = 10 } 
+							"3" = @{ "Move" = .009 ; "Delay" = 10 }
+							"4" = @{ "Move" = .011 ; "Delay" = 10 } 
+							}
 
-    $Choices = [array]$menuOpts.Keys
+    $Choices = [array]$menuOpts.Keys | sort 
     $Choices += "Quit"
 
     $runnin = $True
     while($runnin){ 
-
+	echo $error[0] >> "C:\Users\lolbox\Desktop\log.txt"
         sleep .2
         clear-host
+		echo "SELECTED: $($MouClickParams.values)"
         write-host $($MenuHeader) -ForegroundColor Green
 
         for($i = 0; $i -lt $Choices.count; $i++){
@@ -92,10 +91,19 @@ function Move-Mouse {
             }
 
         else{ 
+              try{ $MouseThread.Stop(); $MouseThread.dispose() }
+              catch { } 
+			  $MouClickParams = $menuOpts[$choices[$GunProfile-1]]
+			  sleep -mil 3  
+			  $MouseThreadEnv = [RunspaceFactory]::CreateRunspace()
+			  $MouseThreadEnv.Open()
+			  $MouseThreadEnv.SessionStateProxy.SetVariable('State',$State)
+			  $MouseThread = [PowerShell]::Create()
+			  $MouseThread.runspace = $MouseThreadEnv
               [void]$MouseThread.AddScript($MouseClickBlock)
-              $MouClickParams = $menuOpts[$choices[$GunProfile-1]]
+
               $Msg = "Running $SelectedOpt Profile..." 
-              $MouClickParams = $menuOpts[$choices[$GunProfile-1]]
+              
               [void]$MouseThread.AddParameters($MouClickParams)
               [void]$MouseThread.BeginInvoke() 
               
