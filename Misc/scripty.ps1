@@ -57,10 +57,10 @@ function Move-Mouse {
 
     $runnin = $True
     while($runnin){ 
-	echo $error[0] >> "C:\Users\lolbox\Desktop\log.txt"
+	
         sleep .2
         clear-host
-		echo "SELECTED: $($MouClickParams.values)"
+		
         write-host $($MenuHeader) -ForegroundColor Green
 
         for($i = 0; $i -lt $Choices.count; $i++){
