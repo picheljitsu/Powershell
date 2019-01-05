@@ -28,9 +28,6 @@ function Move-Mouse {
                     catch [System.Exception] { }
 
                     $ForeGroundProc = [WinAPI.Window]::GetForeGroundWindow()
-
-
-        
                     $d = ([System.Windows.Forms.Cursor]::Position).y * $Move
                     
                     while(1){
@@ -47,9 +44,9 @@ function Move-Mouse {
  
     $msg = ''
     $menuOpts = @{ "1" = @{ "Move" = .005 ; "Delay" = 10 }
-							"2" = @{ "Move" = .007  ; "Delay" = 10 } 
-							"3" = @{ "Move" = .009 ; "Delay" = 10 }
-							"4" = @{ "Move" = .011 ; "Delay" = 10 } 
+		   "2" = @{ "Move" = .007 ; "Delay" = 10 } 
+		   "3" = @{ "Move" = .009 ; "Delay" = 10 }
+		   "4" = @{ "Move" = .011 ; "Delay" = 10 } 
 							}
 
     $Choices = [array]$menuOpts.Keys | sort 
@@ -57,16 +54,13 @@ function Move-Mouse {
 
     $runnin = $True
     while($runnin){ 
-	
         sleep .2
         clear-host
-		
         write-host $($MenuHeader) -ForegroundColor Green
 
         for($i = 0; $i -lt $Choices.count; $i++){
 
            $CurrentChoice = $($choices[$i])
-           
            $State = " "        
            if($SelectedOpt -eq $CurrentChoice){ $state = "X" }
            $Toggled = "[$State]"
@@ -83,11 +77,9 @@ function Move-Mouse {
         if($Choices -notcontains $SelectedOpt){ $msg = "Dumbass. That ain't on the menu" }
 
         if($SelectedOpt -eq "Quit"){ 
-
             try  {[void]$MouseThread.stop()}
             catch{ }                   
             $Msg = "Script Inactive" 
-            
             }
 
         else{ 
