@@ -1,0 +1,10 @@
+#permission issues with this?
+
+$prin = [System.Security.Prinicipal.WindowsIdentity]::new($username, $password)
+$context = $prin.Impersonate()
+
+$context.undo()
+
+#Alternatively to run impersonated 
+$scriptBlock = <script_block>
+$res = [System.Security.principal.WindowsIdentity]::RunImpersonated($prin.AccessToken, [action]$scriptBlock )
