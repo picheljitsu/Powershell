@@ -1,0 +1,31 @@
+
+###### Powershell alternate methods for performing web requests #####
+
+$wc = [System.Net.Webclient]::new()
+$wc.UseDefaultCredentials = $true
+$wc.Credentials = [System.Net.NetworkCredential($user, $pass, $domain)
+
+#Download the raw HTML content
+$content =  $wc.DownloadString($uri)
+
+#Shove the HTML content into a structured DOM/HTML object
+$t = [HtmlAgilityPack.HtmlDocument]::new()
+$t.loadhtml($content)
+
+#Parse out the needed parameters
+$d = $t.DocumentNode.SelectNotes("//input") | ? { $_.attributes.value -eq 'SAMLRequest' }
+
+##################################################################
+
+$Handler = [System.Net.Http.HttpClientHandler]::new()
+$Handler.credentials = $cred
+$Handler.UseDefaultCredentials = $True
+$Handler.AllowAutoRedirect = $True
+$HTTPRequest = [System.Net.Http.HttpRequestMessage]::new()
+$HTTPRequest.Method = 'GET'
+$HTTPRequest.RequestUri = $uri1
+$ua = 'Mozilla/5.0'
+$Client = [System.Net.Http.HttpClient]::new($Handler)
+$Client.DefaultRequestHeaders.Add('User-Agent', $ua)
+$Client.DefaultRequestHeaders.Accept.Add('application/json')
+$Response = $Client.SendAsync($HTTPRequest)
